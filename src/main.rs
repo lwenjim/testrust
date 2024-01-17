@@ -18,9 +18,9 @@ fn main() {
     println!("{:?}", args);
 
     #[derive(Debug, StructOpt)]
-    // #[allow(dead_code)]    
+    // #[allow(dead_code)]
     struct Cli2 {
-        #[structopt(short = "t", long = "pattern")]        
+        #[structopt(short = "t", long = "pattern")]
         pattern: String,
         #[structopt(parse(from_os_str))]
         #[structopt(short = "p", long = "path")]
