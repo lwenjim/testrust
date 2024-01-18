@@ -1,9 +1,8 @@
 #![allow(unused)]
-use std::{error::Error};
-
+use std::error::Error;
 
 // cargo run --quiet -- --path 123 --pattern abc
-fn main()  -> Result<(), Box<dyn Error>>{
+fn main() -> Result<(), Box<dyn Error>> {
     use std::env;
     use structopt::StructOpt;
     #[derive(Debug)]
@@ -53,7 +52,7 @@ fn main()  -> Result<(), Box<dyn Error>>{
     thread::sleep(Duration::from_secs(2));
 
     use signal_hook::{consts::SIGINT, iterator::Signals};
-    use std::{error::Error};
+    use std::error::Error;
     let mut signals = Signals::new(&[SIGINT])?;
     thread::spawn(move || {
         for sig in signals.forever() {
