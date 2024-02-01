@@ -10,8 +10,6 @@ fn some_test_func() -> i32 {
     result
 }
 
-
-
 fn some_func() {
     another_func();
 }
