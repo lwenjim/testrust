@@ -1,0 +1,9 @@
+[package]
+name = "vscode_debug_example"
+version = "0.1.0"
+authors = ["Forrest Smith <forrestthewoods@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+microprofile = "0.0.2"
+rand = "0.6.5"

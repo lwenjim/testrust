@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "asyncdemo",
+    "firstproject",
+    "hello",
+    "httpdemo",
+    "vscode_rust_example",
+]
