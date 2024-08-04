@@ -1,229 +1,98 @@
 #![allow(warnings, unused)]
-
-use std::arch::x86_64::_CMP_FALSE_OQ;
 fn main() {
-    let names = vec!["Bob", "Frank", "Ferris"];
-    // iter - 在每次迭代中借用集合中的一个元素。这样集合本身不会被改变，循环之后仍可以使用。
-    for name in names.iter() {
-        match name {
-            &"Ferris" => println!("There is a rustacean among us!"),
-            _ => println!("Hello {}", name),
-        }
-    }
+    use std::mem;
+    let color = String::from("green");
+    let print = || println!("color:{}", color);
+    // 使用借用来调用闭包
+    print();
 
-    // into_iter - 会消耗集合。在每次迭代中，集合中的数据本身会被提供。一旦集合被消耗了，之后就无法再使用了，因为它已经在循环中被 “移除”（move）
-    let names = vec!["Bob", "Frank", "Ferris"];
-    for name in names.clone().into_iter() {
-        match name {
-            "Ferris" => println!("There is a rustacean among us!"),
-            _ => println!("Hello {}", name),
-        }
-    }
-    println!("len: {}", names.len());
+    // color 可再次被不可变借用, 因为闭包支持有一个指向color的不可变引用
+    let _reborrow = &color;
+    print();
 
-    //iter_mut - 可变地（mutably）借用集合中的每个元素，从而允许集合被就地修改。
-    let mut names = vec!["Bob", "Frank", "Ferris"];
-    for name in names.iter_mut() {
-        *name = match name {
-            &mut "Ferris" => "There is a rustacean among us!",
-            _ => "Hello",
-        }
-    }
-    println!("names: {:?}", names);
+    // 在最后使用 print 后 移动或者重新借用都是允许的
+    let _color_moved = color;
 
-    //===============匹配======================
-    let number = 13;
-    println!("Tell me about {}", number);
-    match number {
-        1 => println!("One!"),
-        2 | 3 | 5 | 7 | 11 => println!("This is a prime"),
-        // 试一试讲13天家到质数列表中
-        // 匹配一个闭区间范围
-        13..=19 => println!("A team"),
-        // 处理其他情况
-        _ => println!("Ain t special"),
-    }
-
-    let boolean = true;
-    // match 也是一个表达式
-    let binary = match boolean {
-        // match 分支必须覆盖所有可能的值
-        false => 0,
-        true => 1,
-        // 试一试讲其中一条分支注解
+    let mut count = 0;
+    // 这个闭包使 count 值增加, 要做到这点, 他需要得到&mut count 或者 count本身 但是 &mut count 的要求
+    // 没那么严格, 所以我们采用这种方式
+    // 该闭包立即借用 count
+    // inc 前面需要加上mut  因为闭包里面存储着一个&mut 变量, 调用闭包时 该变量的变化就意味着闭包内部发生了变化
+    // 因此闭包需要时可变的
+    let mut inc = || {
+        count += 1;
+        println!("count: {}", count);
     };
 
-    println!("{} -> {}", boolean, binary);
+    // 使用可变借用调用闭包
+    inc();
 
-    // ================解构================
-    let triple = (0, -2, 3);
-    println!("Tell me about {:?}", triple);
+    // 因为之后调用闭包, 所以仍然可变借用 count 视图重新借用将导致错误
+    // let _reborrow = &count;
+    // 试一试讲慈航去掉注释
+    inc();
 
-    // match 可以解构一个元组
-    match triple {
-        (0, y, z) => println!("First is 0, y is {:?}, and z is {:?}", y, z),
-        (1, ..) => println!("First is 1 and the rst doesn't matter"),
-        _ => println!("It doesn't matter what they are"),
-    }
+    // 闭包不再借用 &mut count 因此可以正确地重新借用
+    let _count_reborrowed = &mut count;
+    // 不可复制类型 (non-copy type)
+    let movalbe = Box::new(3);
 
-    // match 可以解构枚举
-    enum Color {
-        Red,
-        Blue,
-        Green,
-        RGB(u32, u32, u32),
-        HSV(u32, u32, u32),
-        HSL(u32, u32, u32),
-        CMY(u32, u32, u32),
-        CMYK(u32, u32, u32, u32),
-    }
-    let color = Color::RGB(122, 17, 40);
-    println!("What color is it?");
+    // mem::Drop 要求 T 类型本身 所以闭包讲会捕获变量的值, 这种情况下
+    // 可复制类型将会复制给闭包,从而原始值不受影响, 不可复制类型必须移动(move) 到闭包中
+    // 因而 moveable 变量在这里立即移动到了闭包中
+    let consume = || {
+        println!("moveable: {:?}", movalbe);
+        mem::drop(movalbe);
+    };
+    consume();
 
-    match color {
-        Color::Red => println!("The color is Red!"),
-        Color::Blue => println!("The color is Bule!"),
-        Color::Green => println!("The color is Green!"),
-        Color::RGB(r, g, b) => println!("red: {}, green: {}, blue: {}", r, g, b),
-        Color::HSV(h, s, v) => println!("hue: {}, saturation: {}, value: {}", h, s, v),
-        Color::HSL(h, s, l) => println!("hue: {}, saturation: {}, lightness: {}", h, s, l),
-        Color::CMY(c, m, y) => println!("Cyan: {}, magenta: {}, yellow: {}", c, m, y),
-        Color::CMYK(c, m, y, k) => {
-            println!("Cyan: {}, magenta: {}, yellow: {}, key: {}", c, m, y, k)
-        } // 不需要其他分支, 因为所有的情形已经都覆盖
-    }
-    // ===========卫语句===========
-    let pair = (2, -2);
-    println!("Tell me about {:?}", pair);
-    match pair {
-        (x, y) if x == y => println!("These are twins"),
-        (x, y) if x + y == 0 => println!("Antimatter, kaboom!"),
-        (x, _) if x % 2 == 1 => println!("The first one is odd!"),
-        _ => println!("No correlation..."),
-    }
-    // ===========绑定===========
-    fn age() -> u32 {
-        15
-    }
+    // consume();
 
-    match age() {
-        0 => println!("I haven't celebrated my first birthday yet"),
-        // 可以直接匹配 (match) 1..=12 但那样的话孩子会是几岁?
-        // 相反 在1..=12分支绑定匹配值到 n 现在年龄就是可以读取了
-        n @ 1..=12 => println!("I'm a child of age {:?}", n),
-        n @ 13..=19 => println!("I'm a teen of age {:?}", n),
-        n => println!("I'm an old person of age {:?}", n),
-    }
-    // ===========if let===========
-    let optional = Some(7);
-    match optional {
-        Some(i) => {
-            println!("This is a really long string and {:?}", i);
-        }
-        _ => {}
-    }
+    // 在竖线 | 之前使用 move 会强制闭包取得被捕获变量的所有权：
+    // Vec 在语义上是不可复制的
+    let haystack = vec![1, 2, 3];
+    let contains = |needle| haystack.contains(needle);
+    println!("{}", contains(&1));
+    println!("{}", contains(&4));
 
-    // 全部都是 option<i32> 类型
-    let number = Some(7);
-    let letter: Option<i32> = None;
-    let emoticon: Option<i32> = None;
+    println!("There {} elements in vec", haystack.len());
+    // 取消上面一行的注释将导致编译时错误, 因为借用检查不允许在变量移动走以后继续使用它
+    // 在闭包的签名中删除 move 会到值闭包已不可变方式借用haystack 因此之后
+    // haystack 仍然可用, 取消上面的注释也不会导致错误
 
-    // if let 解构读取 若 let 江number解构 some(i) 则执行
-    // 语句快 {}
-    if let Some(i) = number {
-        println!("Matched  {:?}", i);
+    // ===========作为输入参数============
+    fn apply<F>(f: F)
+    where
+        F: FnOnce(),
+    {
+        f();
     }
+    fn apply_to_3<F>(f: F) -> i32
+    where
+        F: Fn(i32) -> i32,
+    {
+        f(3)
+    }
+    let greeting = "hello";
+    // 不可复制类型
+    // to_owned 从借用的数据创建所有权的数据
+    let mut farewell = "goodbye".to_owned();
+    let diary = || {
+        // greeting 通过引用捕获 故需要闭包时 Fn
+        println!("I sail{}.", greeting);
+        //下文改变了 forewell 因而要求闭包通过可变引用捕获它
+        // 现在需要FnMut
+        farewell.push_str("!!!");
+        println!("Then I scremed {}.", farewell);
+        println!("Now I can sleep. zzzzz");
 
-    // 如果要致命失败情形, 就使用else
-    if let Some(i) = letter {
-        println!("Matched{:?}!", i);
-    } else {
-        // 解构失败,切换到失败的情形
-        println!("Didn't match a number. let's go with a letter!");
-    }
+        // 手动调用drop 又要求闭包通过值获取 farewell
+        // 现在需要FnOnce
+        mem::drop(farewell);
+    };
+    apply(diary);
 
-    // 提供另一种失败情况下的条件
-    let i_like_letters = false;
-    if let Some(i) = emoticon {
-        println!("Matched {:?}", i);
-    }
-    // 解构失败, 使用 else if 来判断是否满足上面提供的条件
-    else if i_like_letters {
-        println!("Didn't match a number.let's go with a letter!")
-    } else {
-        // 条件的值为false, 于是一下就是默认的分支
-        println!("I don't like letters. let's go with an emoticon :)!");
-    }
-
-    // 使用 if let 匹配枚举
-    enum Foo {
-        Bar,
-        Baz,
-        Qux(u32),
-    }
-
-    let a = Foo::Bar;
-    let b = Foo::Baz;
-    let c = Foo::Qux(100);
-
-    // 变量 a 匹配到了Foo::Bar
-    if let Foo::Bar = a {
-        println!("a is foobar");
-    }
-
-    // 变量 b 没有匹配到 Foo::Bar 因此设么也不会打印
-    if let Foo::Bar = b {
-        println!("b is foobar");
-    }
-
-    // 变量 c 匹配到了 Foo::Qux 他带着一个值 就和上面例子中的 some() 类似
-    if let Foo::Qux(value) = c {
-        println!("c is {}", value);
-    }
-
-    // eg
-    enum Foo2 {
-        Bar,
-    }
-    let a = Foo::Bar;
-    // 变量匹配 Foo::Bar
-    if let Foo::Bar = a {
-        // 这就是编译时发现大错误, 使用 if let 来替换他
-        println!("a is foobar");
-    }
-
-    // ==============while let============
-    // 将optional 设为option<i32> 类型
-    let mut optional = Some(0);
-    loop {
-        match optional {
-            Some(i) => {
-                if i > 9 {
-                    println!("Greater than 9, quit");
-                    optional = None;
-                } else {
-                    println!("i is {:?} Try again.", i);
-                    optional = Some(i + 1);
-                }
-            }
-            // 当解构失败是退出循环
-            _ => {
-                break;
-            } // 为什么必须写成这样子的语句呢, 肯定有更优雅的处理方式
-        }
-    }
-    // 使用 while let 可以使这段代码变得更加优雅：
-    let mut optional2 = Some(0);
-    while let Some(i) = optional2 {
-        if i > 9 {
-            println!("Greater than 9, quit");
-            optional = None;
-        } else {
-            println!("i is {:?} Try again.", i);
-            optional = Some(i + 1);
-        }
-        // 使用的缩进更少, 并且不用显式地处理失败的情况.
-    }
-    // if let 有可选项 else / else if 分句
-    // 而while let 没有
+    // 闭包 double 满足 apply_to_3 的trait 约束
+    let double = |x| 2 * x;
+    println!("3 doubled: {}", apply_to_3(double));
 }
