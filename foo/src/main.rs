@@ -3,6 +3,7 @@
 enum MathError {
     DivisionByZero,
 }
+
 type MathResult = Result<String, MathError>;
 
 // 不可复制的类型
@@ -14,6 +15,7 @@ trait DoubleDrop<T> {
     // 定义一个调用者的方法, 接受一个额外的参数T,但不对他做任何事
     fn double_drop(self, _: T);
 }
+
 // 对泛型的调用类型 U 和 任何泛型类型 T 实现 DoubleDrop<T>
 impl<T, U> DoubleDrop<T> for U {
     fn double_drop(self, _: T) {}
@@ -30,6 +32,7 @@ fn compare_types<T: Debug, U: Debug>(t: &T, u: &U) {
     println!("t: {:?}", t);
     println!("u: {:?}", u);
 }
+
 fn main() {
     let d = 1;
     let f = || -> MathResult {
@@ -198,8 +201,8 @@ fn main() {
     println!("The difference is: {}", difference2(&container));
 
     // ================虚类型参数==================
-    use std::ops::Add;
     use std::marker::PhantomData;
+    use std::ops::Add;
     // 这个虚元组结构体对 A 是泛型的, 并且带有隐藏参数 B
     #[derive(PartialEq)]
     struct PhantomTuple<A, B>(A, PhantomData<B>);
@@ -216,6 +219,7 @@ fn main() {
     // 这里 f32 和 f64 是隐藏参数
     // 被指定为<char, f32> dephantomTuple类型
     let _tuple: PhantomTuple<char, f32> = PhantomTuple('Q', PhantomData);
+
     // 被指定为: <char, f64> phantomTuple 类型
     let _struct2: PhantomTuple<char, f64> = PhantomTuple('Q', PhantomData);
 
@@ -224,6 +228,7 @@ fn main() {
         first: 'Q',
         phantom: PhantomData,
     };
+
     // 被指定为<char, f64> 的类型
     let _struct2: PhantomStruct<char, f64> = PhantomStruct {
         first: 'Q',
@@ -236,6 +241,7 @@ fn main() {
     // 虚类型参数练习
     #[derive(Debug, Clone, Copy)]
     enum Inch {}
+
     #[derive(Debug, Clone, Copy)]
     enum Mm {}
     // Length 是一个带有虚类型参数Unit的类型
