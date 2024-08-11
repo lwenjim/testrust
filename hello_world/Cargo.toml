@@ -2,5 +2,7 @@
 name = "hello_world"
 version = "0.1.0"
 edition = "2021"
-
+# https://rustwiki.org/zh-CN/rust-by-example/custom_types/enum/c_like.html
 [dependencies]
+[dev-dependencies]
+pretty_assertions = "1"
