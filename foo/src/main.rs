@@ -21,7 +21,12 @@ impl<T, U> DoubleDrop<T> for U {
     fn double_drop(self, _: T) {}
 }
 
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    os::macos,
+};
+
+use error_chain::error_chain;
 
 fn compare_prints<T: Debug + Display>(t: &T) {
     println!("Debug: {:?}", t);

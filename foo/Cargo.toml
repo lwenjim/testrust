@@ -6,3 +6,4 @@ build = "build.rs"
 
 [dependencies]
 clap = "4.5.13"
+error-chain = "0.12"
