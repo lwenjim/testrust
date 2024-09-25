@@ -19,18 +19,20 @@ async fn main() {
         if url.len() == 0 {
             continue;
         }
-        let re = Regex::new(r"(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?").unwrap();
-        if !re.is_match(url.as_str()) {
-            println!("{}", "failed url");
-            continue;
+        for i in url.split(" ").into_iter() {
+            let re = Regex::new(r"(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?").unwrap();
+            if !re.is_match(i) {
+                println!("{}, {}", "failed ", i);
+                continue;
+            }
+            let _ = file.write(((i.to_string() + "\n").as_str()).as_bytes());
+
+            let data = get_html(i).await.unwrap().replace("\n", "");
+            let _ = file.write((data + "\n").as_bytes());
+
+            let buff = fs::read_to_string("/tmp/a.cache").unwrap();
+            println!("{}", buff);
         }
-        let _ = file.write((url.clone() + "\n").as_bytes());
-
-        let data = get_html(url.as_str()).await.unwrap().replace("\n", "");
-        let _ = file.write((data + "\n").as_bytes());
-
-        let buff = fs::read_to_string("/tmp/a.cache").unwrap();
-        println!("{}", buff);
     }
 }
 
