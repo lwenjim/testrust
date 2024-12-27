@@ -1,43 +1,25 @@
-use regex::Regex;
-use std::error::Error;
-use std::fs::{self, OpenOptions};
-use std::io::{stdin, Write};
-use tokio;
-#[tokio::main]
-async fn main() {
-    loop {
-        let mut file = OpenOptions::new()
-            .append(true)
-            .open("/tmp/a.cache")
-            .unwrap();
-        let mut data = String::new();
-        stdin().read_line(&mut data).expect("error");
-        let url: String = match data.trim().parse() {
-            Ok(num) => num,
-            Err(_) => continue,
-        };
-        if url.len() == 0 {
-            continue;
-        }
-        for i in url.split(" ").into_iter() {
-            let re = Regex::new(r"(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?").unwrap();
-            if !re.is_match(i) {
-                println!("{}, {}", "failed ", i);
-                continue;
-            }
-            let _ = file.write(((i.to_string() + "\n").as_str()).as_bytes());
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
+use std::time::{SystemTime, UNIX_EPOCH};
+fn main() {
+    // 打印时间戳和当前系统时间
+    let date = SystemTime::now();
+    let time = date.duration_since(UNIX_EPOCH).unwrap().as_millis();
+    println!("{}", time);
+    println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
 
-            let data = get_html(i).await.unwrap().replace("\n", "");
-            let _ = file.write((data + "\n").as_bytes());
+    // 打印时间
+    let custom_time = NaiveTime::parse_from_str("10:27:00", "%H:%M:%S").unwrap();
+    println!("{}", custom_time);
 
-            let buff = fs::read_to_string("/tmp/a.cache").unwrap();
-            println!("{}", buff);
-        }
-    }
-}
+    // 打印日期
+    let custom_date = NaiveDate::parse_from_str("2024-12-27", "%Y-%m-%d").unwrap();
+    println!("{}", custom_date);
 
-async fn get_html(url: &str) -> Result<String, Box<dyn Error>> {
-    let client = reqwest::Client::builder().build().unwrap();
-    let data = client.get(url).send().await?.text().await?;
-    Ok(data)
+    // 打印日期时间
+    let custom_date_time =
+        NaiveDateTime::parse_from_str("2024-12-27 10:27:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    println!("{}", custom_date_time);
+
+    let result = eval::eval("3/1.3").unwrap().as_f64().unwrap();
+    println!("{:.2?}", result);
 }
