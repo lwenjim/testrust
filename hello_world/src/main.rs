@@ -489,4 +489,15 @@ fn main() {
     }
     let w = Wrapper(vec![String::from("hello"), String::from("world")]);
     println!("w = {}", w);
+
+    // 创建动态数组
+    let mut v = Vec::with_capacity(10);
+    v.push(1);
+    let mut v = vec![1, 2, 3];
+    v.push(1);
+
+    // 浮点数数组的排序
+    let mut vec = vec![1.0, 5.6, 10.3, 2.0, 15f32];
+    vec.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    assert_eq!(vec, vec![1.0, 2.0, 5.6, 10.3, 15f32]);
 }
