@@ -6,11 +6,13 @@ use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use core::{
     fmt::{self, Display},
     iter::{repeat, Sum},
+    time::Duration,
 };
 use num::Complex;
 use std::{
     fmt::format,
     process::Output,
+    thread,
     time::{SystemTime, UNIX_EPOCH},
 };
 fn main() {
@@ -500,4 +502,168 @@ fn main() {
     let mut vec = vec![1.0, 5.6, 10.3, 2.0, 15f32];
     vec.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
     assert_eq!(vec, vec![1.0, 2.0, 5.6, 10.3, 15f32]);
+
+    // 生命周期
+    // #[derive(Debug)]
+    // struct Foo;
+    // impl Foo {
+    //     fn mutate_and_share(&mut self) -> &Self {
+    //         &*self
+    //     }
+    //     fn share(&self) {}
+    // }
+    // let mut foo = Foo;
+    // let loan = foo.mutate_and_share();
+    // // foo.share();
+    // println!("{:?}", foo);
+
+    // 无界声明周期
+    fn f1<'a, T>(x: *const T) -> &'a T {
+        unsafe { &*x }
+    }
+    let a: *const i32 = &123;
+    f1(a);
+
+    // 生命周期约束
+    struct DoubleRef<'a, 'b: 'a, T> {
+        r: &'a T,
+        s: &'b T,
+    }
+    fn fn_elision(x: &i32) -> &i32 {
+        x
+    }
+    // let closure_slision = |x: &i32| -> &i32 { x };
+    fn fun<T, F: Fn(&T) -> &T>(f: F) -> F {
+        f
+    }
+    let close_siision = fun(|x: &i32| -> &i32 { x });
+
+    // NLL
+    let mut s = String::from("hello");
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}");
+    let r3 = &mut s;
+    println!("{r3}");
+
+    // 再借用
+    #[derive(Debug)]
+    struct Point5 {
+        x: i32,
+        y: i32,
+    }
+    impl Point5 {
+        fn move_to(&mut self, x: i32, y: i32) {
+            self.x = x;
+            self.y = y;
+        }
+    }
+    let mut p = Point5 { x: 0, y: 0 };
+    let mut r = &mut p;
+    let rr: &Point5 = &*r;
+    println!("{:?}", rr);
+    r.move_to(10, 10);
+    println!("{:?}", r);
+
+    // T:'static 和 &'static
+    fn print_it<T: std::fmt::Debug + 'static>(input: &T) {
+        println!("'static value passed in is: {:?}", input);
+    }
+    fn print_it1(input: impl std::fmt::Debug + 'static) {
+        println!("'static value passwd in is: {:?}", input);
+    }
+    let i = 5;
+    print_it(&i);
+    // print_it1(&i);
+
+    let r1;
+    let r2;
+    {
+        static STATIC_EXAMPLE: i32 = 42;
+        r1 = &STATIC_EXAMPLE;
+        let x = "&'static str";
+        r2 = x;
+    }
+    fn static_bound<T: Display + 'static>(t: &T) {
+        println!("{t}");
+    }
+    println!("&'static i32: {}", r1);
+    println!("&'static str: {}", r2);
+    // let r3: &str;
+    // {
+    //     let s1 = "String".to_string();
+    //     static_bound(&s1);
+    //     r3 = &s1;
+    // }
+    // println!("{}", r3);
+
+    // static 到底针对谁
+    // {
+    //     let static_string = "I'm in read-nly memory";
+    //     println!("sttic_string: {}", static_string);
+    // }
+    // println!("static_string reference remains alive: {}", static_string);
+
+    // 闭包
+    let x = 1;
+    let sum = |y| x + y;
+    assert_eq!(3, sum(2));
+
+    // fn muuuuu(intensity: u32) -> u32 {
+    //     println!("muuuu.....");
+    //     thread::sleep(Duration::from_secs(2));
+    //     intensity
+    // }
+    // fn workout(intensity: u32, random_number: u32) {
+    //     if intensity < 25 {
+    //         println!("今天活力满满, 先做 {} 个俯卧撑", muuuuu(intensity));
+    //         println!(
+    //             "旁边有个妹子在看, 服务窗太low, 再来 {} 组卧推",
+    //             muuuuu(intensity)
+    //         );
+    //     } else if random_number == 3 {
+    //         println!("昨天连过度了, 今天还是休息一下吧");
+    //     } else {
+    //         println!("昨天连过度了, 今天干干有氧, 跑步 {}", muuuuu(intensity))
+    //     }
+    // }
+    // let intensity = 10;
+    // let random_number = 2;
+    // workout(intensity, random_number);
+
+    // 闭包对内存的影响
+    // 三种Fn特征
+    fn fn_once<F>(func: F)
+    where
+        F: FnOnce(usize) -> bool,
+    {
+        println!("{}", func(3));
+        // println!("{}", func(4));
+    }
+    let x = [1, 2, 3];
+    fn_once(|z| z == x.len());
+
+    // move 关键字
+    let mut s = String::new();
+    let mut update_string = |str| s.push_str(str);
+    update_string("hello");
+    println!("{:?}", s);
+
+    let v = vec![1, 2, 3];
+    let handle = thread::spawn(move || {
+        println!("Here 's a vector: {:?}", v);
+    });
+    handle.join().unwrap();
+
+    let mut s = String::new();
+    let update_string = |str| s.push_str(str);
+    fn exec<'a, F: FnMut(&'a str)>(mut f: F) {
+        f("hello")
+    }
+    exec(update_string);
+    println!("{:?}", s);
+
+    let x = 1;
+    let sum = |y| x + y;
+    assert_eq!(3, sum(2));
 }
