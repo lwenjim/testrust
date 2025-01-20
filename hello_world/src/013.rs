@@ -195,17 +195,6 @@ fn main() {
         1 << 2
     );
 
-    // 序列
-    for i in 1..=5 {
-        println!("{}", i);
-    }
-    for i in 'a'..='z' {
-        println!("{}", i);
-    }
-    for i in 'A'..='Z' {
-        println!("{}", i);
-    }
-
     // 有理数和复数
     let a = Complex { re: 2.1, im: -1.2 };
     let b = Complex::new(11.1, 22.2);
@@ -663,7 +652,7 @@ fn main() {
     exec(update_string);
     println!("{:?}", s);
 
-    for i in 1..100 {
-       println!("{i}");
-    }
+    let x = 1;
+    let sum = |y| x + y;
+    assert_eq!(3, sum(2));
 }
